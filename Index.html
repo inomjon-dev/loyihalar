@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhoneControl MVP — Do‘kon Egasi va Xodimlar Tizimi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #090D16;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090D16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-200">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. LOGIN SCREEN (ENTRY GATE)                                          -->
+    <!-- ===================================================================== -->
+    <section id="login-view" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Logo & Title -->
+            <div class="text-center mb-7 relative">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/25 mb-4">
+                    <i class="fa-solid fa-mobile-screen-button text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">Phone<span class="text-sky-400">Control</span></h1>
+                <p class="text-xs text-slate-400 mt-1">Telefon savdo do‘konlari nazorat va POS tizimi</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 relative">
+                <div id="login-error" class="hidden rounded-xl bg-rose-500/10 border border-rose-500/30 px-3.5 py-2.5 text-xs text-rose-300 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation text-rose-400"></i>
+                    <span id="login-error-text">Login yoki parol noto‘g‘ri!</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Login (Foydalanuvchi nomi)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="login-username" required autocomplete="off" placeholder="Masalan: owner yoki sotuvchi1" class="w-full rounded-xl bg-slate-950/90 border border-slate-700/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Parol</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="password" id="login-password" required placeholder="••••" class="w-full rounded-xl bg-slate-950/90 border border-slate-700/80 pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">
+                            <i id="pwd-eye-icon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition active:scale-[0.99] cursor-pointer">
+                    Tizimga kirish <i class="fa-solid fa-arrow-right-to-bracket ml-1.5"></i>
+                </button>
+            </form>
+
+            <!-- Subtle Credentials Hint (Manual Entry Required) -->
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-center relative">
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    Kirish uchun login va parolni qo‘lda kiriting.<br>
+                    <span class="text-slate-400 font-mono">owner</span>, <span class="text-slate-400 font-mono">sotuvchi1</span>, <span class="text-slate-400 font-mono">sotuvchi2</span>, <span class="text-slate-400 font-mono">sotuvchi3</span> (parol: <span class="text-slate-400 font-mono">1234</span>)
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 2. OWNER DASHBOARD (DO'KON EGASI KABINETI)                            -->
+    <!-- ===================================================================== -->
+    <div id="owner-view" class="hidden min-h-screen flex flex-col">
+        <!-- Owner Top Header -->
+        <header class="sticky top-0 z-30 glass-card border-b border-slate-800/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                <i class="fa-solid fa-crown text-white text-base"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-base sm:text-lg text-white">Abdurasulov Inomjon</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Do‘kon Egasi</span>
+                                </div>
+                                <p class="text-xs text-slate-400">Barcha filiallar, sof foyda va xodimlar nazorati</p>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="lg:hidden px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket"></i> Chiqish
+                        </button>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Branch Filter -->
+                        <div class="relative flex-grow sm:flex-grow-0 min-w-[200px]">
+                            <i class="fa-solid fa-store absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 text-xs"></i>
+                            <select id="owner-branch-filter" onchange="renderOwnerDashboard()" class="w-full appearance-none rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-8 py-2.5 text-sm font-medium text-white focus:border-sky-500 focus:outline-none cursor-pointer">
+                                <option value="all">Barcha filiallar (3 ta)</option>
+                                <option value="Andijon Markaziy">Andijon Markaziy</option>
+                                <option value="Farg‘ona Filiali">Farg‘ona Filiali</option>
+                                <option value="Buloqboshi Filiali">Buloqboshi Filiali</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+
+                        <button onclick="openAddPhoneModal('owner')" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-bold transition cursor-pointer">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Telefon kirim</span>
+                        </button>
+
+                        <button onclick="openAddStaffModal()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold border border-slate-700 transition cursor-pointer">
+                            <i class="fa-solid fa-user-plus text-indigo-400"></i>
+                            <span>Xodim qo‘shish</span>
+                        </button>
+
+                        <button onclick="logout()" class="hidden lg:inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 text-sm font-semibold transition cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Chiqish</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Owner Main Body -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <!-- 4 KPI Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Umumiy Tushum</p>
+                            <h3 id="owner-kpi-revenue" class="text-2xl font-bold text-white mt-2">0 so‘m</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                    </div>
+                    <p id="owner-kpi-sales-count" class="text-xs text-sky-400 mt-3 font-medium">0 ta sotuv amalga oshirilgan</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 border-emerald-500/20">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-emerald-300/80">Sof Foyda (Faqat Egaga)</p>
+                            <h3 id="owner-kpi-profit" class="text-2xl font-bold text-emerald-400 mt-2">0 so‘m</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <p id="owner-kpi-margin" class="text-xs text-emerald-400 mt-3 font-medium">0% o‘rtacha foyda marjasi</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Ombordagi Telefonlar</p>
+                            <h3 id="owner-kpi-stock" class="text-2xl font-bold text-white mt-2">0 dona</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                    </div>
+                    <p id="owner-kpi-stock-val" class="text-xs text-indigo-300 mt-3 font-medium">0 so‘m ombor tan narxi</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Nasiya / Qarzlar</p>
+                            <h3 id="owner-kpi-debt" class="text-2xl font-bold text-amber-400 mt-2">0 so‘m</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                    <p id="owner-kpi-debt-count" class="text-xs text-amber-400 mt-3 font-medium">0 ta faol qarzdor mijoz</p>
+                </div>
+            </section>
+
+            <!-- Admin Approval Requests Panel (Tasdiqlash so'rovlari) -->
+            <section id="owner-approvals-section" class="glass-card rounded-2xl p-5 border-amber-500/30">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 relative">
+                            <i class="fa-solid fa-bell"></i>
+                            <span id="owner-pending-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-white">Tasdiqlash So‘rovlari</h2>
+                                <span id="owner-pending-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">0 ta kutilmoqda</span>
+                            </div>
+                            <p class="text-xs text-slate-400">Xodimlar kiritgan kirim, sotuv va qarz to‘lovlarini tekshirib tasdiqlang</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="appr-filter-pending" onclick="setApprovalFilter('pending')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition cursor-pointer">Kutilayotganlar</button>
+                        <button id="appr-filter-history" onclick="setApprovalFilter('history')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer">Ko‘rib chiqilganlar</button>
+                    </div>
+                </div>
+
+                <div id="owner-approvals-list" class="mt-4 space-y-3">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
+            <!-- Staff Performance & Branch Breakdown -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 glass-card rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-users text-sky-400"></i>
+                            <span>Sotuvchilar Samaradorligi va Reytingi</span>
+                        </h2>
+                        <span class="text-xs text-slate-400">Real-vaqt natijalar</span>
+                    </div>
+                    <div id="owner-staff-breakdown" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-building text-indigo-400"></i>
+                            <span>Filiallar Ulushi</span>
+                        </h2>
+                        <div id="owner-branch-bars" class="space-y-4">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                    <div class="pt-4 mt-4 border-t border-slate-800/80 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Demo ma'lumotlar:</span>
+                        <button onclick="resetAllDemoData()" class="text-rose-400 hover:underline cursor-pointer">Boshlang‘ich holatga qaytarish</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Owner Tabs: Inventory vs Sales & Debts -->
+            <section class="glass-card rounded-2xl p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <button id="owner-tab-btn-stock" onclick="switchOwnerTab('stock')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 text-slate-950 transition cursor-pointer">
+                            <i class="fa-solid fa-mobile-screen mr-1.5"></i>Ombordagi telefonlar
+                        </button>
+                        <button id="owner-tab-btn-sales" onclick="switchOwnerTab('sales')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer">
+                            <i class="fa-solid fa-receipt mr-1.5"></i>Sotuvlar tarixi & Nasiyalar
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="owner-search" oninput="renderOwnerDashboard()" placeholder="IMEI, model yoki mijoz izlash..." class="w-full sm:w-64 rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Tab 1: Owner Stock Table -->
+                <div id="owner-tab-stock" class="mt-4 overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                <th class="py-3 px-3">Model</th>
+                                <th class="py-3 px-3">IMEI (15 raqam)</th>
+                                <th class="py-3 px-3">Holati / Batareya</th>
+                                <th class="py-3 px-3">Filial</th>
+                                <th class="py-3 px-3 text-emerald-400">Tan Narxi</th>
+                                <th class="py-3 px-3 text-right">Tezkor Sotuv</th>
+                            </tr>
+                        </thead>
+                        <tbody id="owner-stock-tbody" class="divide-y divide-slate-800/60 text-sm"></tbody>
+                    </table>
+                </div>
+
+                <!-- Tab 2: Owner Sales & Debts Table -->
+                <div id="owner-tab-sales" class="hidden mt-4 overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                <th class="py-3 px-3">Telefon & IMEI</th>
+                                <th class="py-3 px-3">Filial & Sotuvchi</th>
+                                <th class="py-3 px-3">To‘lov & Mijoz</th>
+                                <th class="py-3 px-3">Sotuv Narxi</th>
+                                <th class="py-3 px-3 text-emerald-400">Sof Foyda</th>
+                                <th class="py-3 px-3">Qolgan Qarz</th>
+                                <th class="py-3 px-3 text-right">Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="owner-sales-tbody" class="divide-y divide-slate-800/60 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 3. STAFF DASHBOARD (SOTUVCHI / XODIM KABINETI)                        -->
+    <!-- ===================================================================== -->
+    <div id="staff-view" class="hidden min-h-screen flex flex-col">
+        <!-- Staff Top Header (Locked to Assigned Branch) -->
+        <header class="sticky top-0 z-30 glass-card border-b border-slate-800/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                                <i class="fa-solid fa-user-tie text-white text-base"></i>
+                            </div>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span id="staff-header-name" class="font-bold text-base text-white">Sotuvchi</span>
+                                    <span id="staff-header-branch" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/25">
+                                        <i class="fa-solid fa-location-dot"></i> Filial
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400">Sotuvchi POS kabineti (Faqat biriktirilgan filial)</p>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="sm:hidden px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 text-xs font-semibold cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2.5">
+                        <button onclick="openAddPhoneModal('staff')" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold border border-slate-700 transition cursor-pointer">
+                            <i class="fa-solid fa-plus text-sky-400"></i>
+                            <span>Yangi telefon qabul qilish</span>
+                        </button>
+                        <button onclick="logout()" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 text-sm font-semibold transition cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Chiqish</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Staff Main Content (NO Cost Price or Net Profit shown!) -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <!-- 3 Staff KPI Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Filial Ombordagi Telefonlar</p>
+                            <h3 id="staff-kpi-stock" class="text-2xl font-bold text-white mt-2">0 dona</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3">Sotuvga tayyor qurilmalar</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Mening Shaxsiy Savdolarim</p>
+                            <h3 id="staff-kpi-mysales" class="text-2xl font-bold text-sky-400 mt-2">0 so‘m</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                            <i class="fa-solid fa-cash-register"></i>
+                        </div>
+                    </div>
+                    <p id="staff-kpi-mycount" class="text-xs text-sky-300 mt-3 font-medium">0 ta telefon sotdingiz</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Filial Nasiya / Qarzlari</p>
+                            <h3 id="staff-kpi-debt" class="text-2xl font-bold text-amber-400 mt-2">0 so‘m</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                    <p id="staff-kpi-debtcount" class="text-xs text-amber-400 mt-3 font-medium">0 ta faol nasiya</p>
+                </div>
+            </section>
+
+            <!-- Fast POS Search & Branch Inventory -->
+            <section class="glass-card rounded-2xl p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-barcode text-sky-400"></i>
+                            <span>Tezkor Sotuv (POS) — Filial Ombordagi Telefonlar</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">IMEI raqamini kiriting yoki ro‘yxatdan tanlab «Sotish» tugmasini bosing</p>
+                    </div>
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="staff-pos-search" oninput="renderStaffDashboard()" placeholder="15 xonali IMEI yoki model..." class="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div id="staff-stock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
+            <!-- Staff Sales History & Branch Debt Collection -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- My Submitted Requests Status (Kutilayotgan / Tasdiqlangan / Rad etilgan) -->
+                <div class="glass-card rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check text-amber-400"></i>
+                            <span>Mening So‘rovlarim (Admin nazorati)</span>
+                        </h2>
+                        <span id="staff-pending-count-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/25">0 kutilmoqda</span>
+                    </div>
+                    <div id="staff-requests-list" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Branch Active Installment Debts -->
+                <div class="glass-card rounded-2xl p-5">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+                        <span>Filialdagi Faol Nasiyalar (Qarz qabul qilish)</span>
+                    </h2>
+                    <div id="staff-debts-list" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Approved Sales History -->
+            <section class="glass-card rounded-2xl p-5">
+                <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-clock-rotate-left text-sky-400"></i>
+                    <span>Tasdiqlangan Shaxsiy Sotuvlarim Tarixi</span>
+                </h2>
+                <div id="staff-mysales-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALS                                                                -->
+    <!-- ===================================================================== -->
+
+    <!-- MODAL 1: Add Phone to Inventory -->
+    <div id="modal-add-phone" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen text-sky-400"></i>
+                    <span>Omborga Telefon Qabul Qilish</span>
+                </h3>
+                <button onclick="closeModal('modal-add-phone')" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleAddPhoneSubmit(event)" class="mt-4 space-y-3.5">
+                <div id="add-phone-branch-wrapper">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Filial</label>
+                    <select id="add-phone-branch" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                        <option value="Andijon Markaziy">Andijon Markaziy</option>
+                        <option value="Farg‘ona Filiali">Farg‘ona Filiali</option>
+                        <option value="Buloqboshi Filiali">Buloqboshi Filiali</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Telefon modeli va xotirasi</label>
+                    <input type="text" id="add-phone-model" required placeholder="Masalan: iPhone 15 Pro 256GB" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <label class="text-xs font-medium text-slate-300">IMEI raqami (15 ta raqam)</label>
+                        <button type="button" onclick="fillRandomIMEI()" class="text-[11px] text-sky-400 hover:underline cursor-pointer">Tasodifiy IMEI</button>
+                    </div>
+                    <input type="text" id="add-phone-imei" required maxlength="15" minlength="15" pattern="\d{15}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="358492019482710" class="w-full font-mono rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Holati</label>
+                        <select id="add-phone-condition" onchange="toggleBatteryInput()" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                            <option value="Yangi">Yangi (Upakovka)</option>
+                            <option value="B/U">B/U (Ishlatilgan)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Batareya (%)</label>
+                        <input type="number" id="add-phone-battery" min="50" max="100" value="100" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Kirim / Tan narxi (so‘m)</label>
+                    <input type="number" id="add-phone-cost" required min="100000" step="10000" placeholder="11500000" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                    <p class="text-[10px] text-slate-500 mt-1">Saqlangandan so‘ng tan narxi faqat do‘kon egasiga ko‘rinadi.</p>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-phone')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold cursor-pointer">Bekor qilish</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold cursor-pointer">Omborga qo‘shish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Record Sale (POS Checkout) -->
+    <div id="modal-sell-phone" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i>
+                    <span>Sotuvni Rasmiylashtirish</span>
+                </h3>
+                <button onclick="closeModal('modal-sell-phone')" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleSellPhoneSubmit(event)" class="mt-4 space-y-3.5">
+                <input type="hidden" id="sell-phone-id">
+
+                <div class="rounded-xl bg-slate-950 border border-slate-800 p-3">
+                    <div id="sell-phone-title" class="font-bold text-sm text-white">Model</div>
+                    <div id="sell-phone-meta" class="text-xs font-mono text-slate-400 mt-0.5">IMEI • Filial</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Sotuv narxi (so‘m)</label>
+                        <input type="number" id="sell-price" required min="100000" step="10000" oninput="recalcInstallmentDebt()" placeholder="12500000" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">To‘lov turi</label>
+                        <select id="sell-payment-type" onchange="toggleInstallmentFields()" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none">
+                            <option value="Naqd">Naqd pul</option>
+                            <option value="Karta">Karta (Uzcard/Humo)</option>
+                            <option value="Nasiya">Nasiya (Qarzga)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Optional Customer Name for Cash/Card, Required for Nasiya -->
+                <div id="regular-customer-box">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Mijoz ismi (ixtiyoriy)</label>
+                    <input type="text" id="sell-regular-customer" placeholder="Masalan: Odiljon" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none">
+                </div>
+
+                <!-- Nasiya / Installment Fields -->
+                <div id="installment-fields-box" class="hidden space-y-3 p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/25">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Nasiya (Qarz) ma'lumotlari</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Mijoz ism-familiyasi *</label>
+                            <input type="text" id="inst-customer-name" placeholder="Alisher Karimov" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Telefon raqami *</label>
+                            <input type="text" id="inst-customer-phone" placeholder="+998 90 123-45-67" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Boshlang‘ich to‘lov (so‘m)</label>
+                            <input type="number" id="inst-paid-amount" min="0" value="0" step="10000" oninput="recalcInstallmentDebt()" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-300 mb-1">Qaytarish sanasi</label>
+                            <input type="date" id="inst-due-date" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-amber-500/20 text-xs">
+                        <span class="text-slate-300">Qolgan qarz summasi:</span>
+                        <span id="inst-remaining-debt" class="font-bold text-amber-400">0 so‘m</span>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-sell-phone')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold cursor-pointer">Bekor qilish</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold cursor-pointer">Sotuvni tasdiqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Owner Add New Staff Account -->
+    <div id="modal-add-staff" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-indigo-400"></i>
+                    <span>Yangi Sotuvchi Xodim Qo‘shish</span>
+                </h3>
+                <button onclick="closeModal('modal-add-staff')" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleAddStaffSubmit(event)" class="mt-4 space-y-3.5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Xodim ism-familiyasi</label>
+                    <input type="text" id="new-staff-name" required placeholder="Masalan: Bekzod Toshmatov" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Biriktiriladigan filial</label>
+                    <select id="new-staff-branch" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                        <option value="Andijon Markaziy">Andijon Markaziy</option>
+                        <option value="Farg‘ona Filiali">Farg‘ona Filiali</option>
+                        <option value="Buloqboshi Filiali">Buloqboshi Filiali</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Login</label>
+                        <input type="text" id="new-staff-username" required placeholder="bekzod" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Parol</label>
+                        <input type="text" id="new-staff-password" required value="1234" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-staff')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold cursor-pointer">Bekor qilish</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold cursor-pointer">Xodimni yaratish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT: AUTHENTICATION, STATE & ROLE-BASED RENDERING              -->
+    <!-- ===================================================================== -->
+    <script>
+        const DB_KEY = 'phonecontrol_db_v2';
+        const SESSION_KEY = 'phonecontrol_active_user_v2';
+
+        const DEFAULT_DB = {
+            users: [
+                { id: 'u-owner', username: 'owner', password: '1234', fullName: 'Abdurasulov Inomjon', role: 'owner', branch: 'all' },
+                { id: 'u-s1', username: 'sotuvchi1', aliases: ['ali'], password: '1234', fullName: 'Aliyev Sardorbek', role: 'staff', branch: 'Andijon Markaziy' },
+                { id: 'u-s2', username: 'sotuvchi2', aliases: ['vali'], password: '1234', fullName: 'Valiyev Jasurbek', role: 'staff', branch: 'Farg‘ona Filiali' },
+                { id: 'u-s3', username: 'sotuvchi3', aliases: ['jasur'], password: '1234', fullName: 'Qodirov Dilshodbek', role: 'staff', branch: 'Buloqboshi Filiali' }
+            ],
+            phones: [
+                { id: 'p-101', model: 'iPhone 15 Pro Max 256GB Natural', imei: '358492019482710', condition: 'Yangi', battery: 100, branch: 'Andijon Markaziy', costPrice: 13200000, status: 'in_stock' },
+                { id: 'p-102', model: 'iPhone 13 128GB Midnight', imei: '352910485729103', condition: 'B/U', battery: 89, branch: 'Andijon Markaziy', costPrice: 5400000, status: 'in_stock' },
+                { id: 'p-103', model: 'Samsung Galaxy S24 Ultra 512GB', imei: '351920485719204', condition: 'Yangi', battery: 100, branch: 'Farg‘ona Filiali', costPrice: 12100000, status: 'in_stock' },
+                { id: 'p-104', model: 'Redmi Note 13 Pro+ 12/512GB', imei: '861928374650192', condition: 'Yangi', battery: 100, branch: 'Farg‘ona Filiali', costPrice: 3850000, status: 'in_stock' },
+                { id: 'p-105', model: 'Honor X9c 12/256GB Titanium', imei: '864920184726193', condition: 'Yangi', battery: 100, branch: 'Buloqboshi Filiali', costPrice: 3650000, status: 'in_stock' },
+                { id: 'p-106', model: 'iPhone 14 Pro 256GB Deep Purple', imei: '359201847261509', condition: 'B/U', battery: 92, branch: 'Buloqboshi Filiali', costPrice: 8900000, status: 'in_stock' },
+
+                // Already sold items
+                { id: 'p-201', model: 'iPhone 16 Pro 256GB Desert', imei: '357192840192837', condition: 'Yangi', battery: 100, branch: 'Andijon Markaziy', costPrice: 14100000, status: 'sold' },
+                { id: 'p-202', model: 'Samsung Galaxy A55 8/256GB', imei: '354019283746510', condition: 'Yangi', battery: 100, branch: 'Farg‘ona Filiali', costPrice: 4200000, status: 'sold' },
+                { id: 'p-203', model: 'iPhone 12 Pro 128GB Pacific Blue', imei: '356192837465091', condition: 'B/U', battery: 86, branch: 'Buloqboshi Filiali', costPrice: 4600000, status: 'sold' }
+            ],
+            sales: [
+                {
+                    id: 's-1',
+                    phoneId: 'p-201',
+                    model: 'iPhone 16 Pro 256GB Desert',
+                    imei: '357192840192837',
+                    branch: 'Andijon Markaziy',
+                    sellerId: 'u-s1',
+                    sellerName: 'Aliyev Sardorbek',
+                    costPrice: 14100000,
+                    salePrice: 15500000,
+                    paymentType: 'Naqd',
+                    customerName: 'Sherzod M.',
+                    customerPhone: '',
+                    paidAmount: 15500000,
+                    debtAmount: 0,
+                    dueDate: '',
+                    soldAt: 'Bugun, 11:20'
+                },
+                {
+                    id: 's-2',
+                    phoneId: 'p-202',
+                    model: 'Samsung Galaxy A55 8/256GB',
+                    imei: '354019283746510',
+                    branch: 'Farg‘ona Filiali',
+                    sellerId: 'u-s2',
+                    sellerName: 'Valiyev Jasurbek',
+                    costPrice: 4200000,
+                    salePrice: 4900000,
+                    paymentType: 'Nasiya',
+                    customerName: 'Otabek Tursunov',
+                    customerPhone: '+998 90 543-21-10',
+                    paidAmount: 2500000,
+                    debtAmount: 2400000,
+                    dueDate: '2026-12-15',
+                    soldAt: 'Bugun, 10:05'
+                },
+                {
+                    id: 's-3',
+                    phoneId: 'p-203',
+                    model: 'iPhone 12 Pro 128GB Pacific Blue',
+                    imei: '356192837465091',
+                    branch: 'Buloqboshi Filiali',
+                    sellerId: 'u-s3',
+                    sellerName: 'Qodirov Dilshodbek',
+                    costPrice: 4600000,
+                    salePrice: 5350000,
+                    paymentType: 'Nasiya',
+                    customerName: 'Akmaljon Xolmatov',
+                    customerPhone: '+998 91 482-11-22',
+                    paidAmount: 3000000,
+                    debtAmount: 2350000,
+                    dueDate: '2026-12-10',
+                    soldAt: 'Kecha, 17:40'
+                }
+            ],
+            pending_approvals: [
+                {
+                    id: 'req-demo-1',
+                    type: 'sale',
+                    status: 'pending',
+                    staffId: 'u-s1',
+                    staffName: 'Aliyev Sardorbek',
+                    branch: 'Andijon Markaziy',
+                    createdAt: 'Bugun, 12:45',
+                    payload: {
+                        phoneId: 'p-102',
+                        model: 'iPhone 13 128GB Midnight',
+                        imei: '352910485729103',
+                        costPrice: 5400000,
+                        salePrice: 6150000,
+                        paymentType: 'Naqd',
+                        customerName: 'Javohir R.',
+                        customerPhone: '',
+                        paidAmount: 6150000,
+                        debtAmount: 0,
+                        dueDate: ''
+                    }
+                }
+            ]
+        };
+
+        let db = loadDB();
+        let currentUser = loadSession();
+        let ownerApprovalTab = 'pending';
+
+        function loadDB() {
+            try {
+                const raw = localStorage.getItem(DB_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (!parsed.pending_approvals) parsed.pending_approvals = [];
+                    return parsed;
+                }
+            } catch (e) {}
+            saveDB(DEFAULT_DB);
+            return JSON.parse(JSON.stringify(DEFAULT_DB));
+        }
+
+        function saveDB(data) {
+            localStorage.setItem(DB_KEY, JSON.stringify(data));
+        }
+
+        function loadSession() {
+            try {
+                const raw = localStorage.getItem(SESSION_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveSession(user) {
+            if (user) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+            else localStorage.removeItem(SESSION_KEY);
+        }
+
+        function formatUZS(num) {
+            return new Intl.NumberFormat('uz-UZ').format(Math.round(num || 0)) + ' so‘m';
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const isErr = type === 'error';
+            el.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-xs sm:text-sm font-medium transition-all ${
+                isErr ? 'bg-rose-950/95 border-rose-500/40 text-rose-200' : 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200'
+            }`;
+            el.innerHTML = `<i class="fa-solid ${isErr ? 'fa-circle-exclamation text-rose-400' : 'fa-circle-check text-emerald-400'}"></i><span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        // =====================================================================
+        // LOGIN & LOGOUT LOGIC
+        // =====================================================================
+        function togglePasswordVisibility() {
+            const inp = document.getElementById('login-password');
+            const icon = document.getElementById('pwd-eye-icon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const uname = document.getElementById('login-username').value.trim().toLowerCase();
+            const pwd = document.getElementById('login-password').value.trim();
+            const errBox = document.getElementById('login-error');
+
+            const matchedUser = db.users.find(u => 
+                (u.username.toLowerCase() === uname || (u.aliases && u.aliases.includes(uname))) && 
+                u.password === pwd
+            );
+
+            if (!matchedUser) {
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            errBox.classList.add('hidden');
+            currentUser = matchedUser;
+            saveSession(currentUser);
+            routeByRole();
+            showToast(`Xush kelibsiz, ${currentUser.fullName}!`);
+        }
+
+        function logout() {
+            currentUser = null;
+            saveSession(null);
+            document.getElementById('login-form').reset();
+            routeByRole();
+            showToast("Tizimdan chiqildi.");
+        }
+
+        function routeByRole() {
+            const loginView = document.getElementById('login-view');
+            const ownerView = document.getElementById('owner-view');
+            const staffView = document.getElementById('staff-view');
+
+            loginView.classList.add('hidden');
+            ownerView.classList.add('hidden');
+            staffView.classList.add('hidden');
+
+            if (!currentUser) {
+                loginView.classList.remove('hidden');
+                return;
+            }
+
+            if (currentUser.role === 'owner') {
+                ownerView.classList.remove('hidden');
+                renderOwnerDashboard();
+            } else {
+                staffView.classList.remove('hidden');
+                document.getElementById('staff-header-name').textContent = currentUser.fullName;
+                document.getElementById('staff-header-branch').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${currentUser.branch}`;
+                renderStaffDashboard();
+            }
+        }
+
+        // =====================================================================
+        // OWNER DASHBOARD RENDERING
+        // =====================================================================
+        function switchOwnerTab(tab) {
+            const stockTab = document.getElementById('owner-tab-stock');
+            const salesTab = document.getElementById('owner-tab-sales');
+            const btnStock = document.getElementById('owner-tab-btn-stock');
+            const btnSales = document.getElementById('owner-tab-btn-sales');
+
+            if (tab === 'stock') {
+                stockTab.classList.remove('hidden');
+                salesTab.classList.add('hidden');
+                btnStock.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 text-slate-950 transition cursor-pointer';
+                btnSales.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer';
+            } else {
+                stockTab.classList.add('hidden');
+                salesTab.classList.remove('hidden');
+                btnSales.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 text-slate-950 transition cursor-pointer';
+                btnStock.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer';
+            }
+        }
+
+        function renderOwnerDashboard() {
+            const branchFilter = document.getElementById('owner-branch-filter').value;
+            const search = document.getElementById('owner-search').value.trim().toLowerCase();
+
+            const filteredSales = branchFilter === 'all' ? db.sales : db.sales.filter(s => s.branch === branchFilter);
+            const filteredStock = db.phones.filter(p => p.status === 'in_stock' && (branchFilter === 'all' || p.branch === branchFilter));
+
+            // KPIs
+            const totalRevenue = filteredSales.reduce((acc, s) => acc + Number(s.salePrice), 0);
+            const totalProfit = filteredSales.reduce((acc, s) => acc + (Number(s.salePrice) - Number(s.costPrice)), 0);
+            const totalDebt = filteredSales.reduce((acc, s) => acc + Number(s.debtAmount || 0), 0);
+            const debtCount = filteredSales.filter(s => Number(s.debtAmount) > 0).length;
+            const stockCostTotal = filteredStock.reduce((acc, p) => acc + Number(p.costPrice), 0);
+            const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+
+            document.getElementById('owner-kpi-revenue').textContent = formatUZS(totalRevenue);
+            document.getElementById('owner-kpi-sales-count').textContent = `${filteredSales.length} ta sotuv amalga oshirilgan`;
+            document.getElementById('owner-kpi-profit').textContent = formatUZS(totalProfit);
+            document.getElementById('owner-kpi-margin').textContent = `${margin}% o‘rtacha foyda marjasi`;
+            document.getElementById('owner-kpi-stock').textContent = `${filteredStock.length} dona`;
+            document.getElementById('owner-kpi-stock-val').textContent = `${formatUZS(stockCostTotal)} tan narxi`;
+            document.getElementById('owner-kpi-debt').textContent = formatUZS(totalDebt);
+            document.getElementById('owner-kpi-debt-count').textContent = `${debtCount} ta faol qarzdor mijoz`;
+
+            // Render Approval Requests
+            renderOwnerApprovals(branchFilter);
+
+            // Staff Breakdown
+            const staffUsers = db.users.filter(u => u.role === 'staff' && (branchFilter === 'all' || u.branch === branchFilter));
+            const staffContainer = document.getElementById('owner-staff-breakdown');
+            staffContainer.innerHTML = staffUsers.map(st => {
+                const stSales = db.sales.filter(s => s.sellerId === st.id);
+                const stRev = stSales.reduce((sum, s) => sum + Number(s.salePrice), 0);
+                const stProf = stSales.reduce((sum, s) => sum + (Number(s.salePrice) - Number(s.costPrice)), 0);
+                return `
+                    <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+                        <div>
+                            <div class="text-sm font-bold text-white">${st.fullName}</div>
+                            <div class="text-[11px] text-sky-400">${st.branch} • <span class="text-slate-400 font-mono">login: ${st.username}</span></div>
+                            <div class="text-xs text-slate-400 mt-1">${stSales.length} ta sotuv • Foyda: <span class="text-emerald-400 font-semibold">${formatUZS(stProf)}</span></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-bold text-white">${formatUZS(stRev)}</div>
+                            <span class="text-[10px] text-slate-500">Jami savdo</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Branch Bars
+            const branches = ['Andijon Markaziy', 'Farg‘ona Filiali', 'Buloqboshi Filiali'];
+            const allRev = db.sales.reduce((sum, s) => sum + Number(s.salePrice), 0) || 1;
+            document.getElementById('owner-branch-bars').innerHTML = branches.map(b => {
+                const bRev = db.sales.filter(s => s.branch === b).reduce((sum, s) => sum + Number(s.salePrice), 0);
+                const pct = Math.round((bRev / allRev) * 100);
+                return `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">${b}</span>
+                            <span class="text-sky-400 font-bold">${formatUZS(bRev)} (${pct}%)</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Stock Table
+            const searchedStock = filteredStock.filter(p => !search || p.model.toLowerCase().includes(search) || p.imei.includes(search));
+            document.getElementById('owner-stock-tbody').innerHTML = searchedStock.length ? searchedStock.map(p => `
+                <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-3 px-3 font-semibold text-white">${p.model}</td>
+                    <td class="py-3 px-3 font-mono text-xs text-slate-300">${p.imei}</td>
+                    <td class="py-3 px-3 text-xs">
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">${p.condition}</span>
+                        <span class="ml-1 text-emerald-400 font-medium">${p.battery}%</span>
+                    </td>
+                    <td class="py-3 px-3 text-xs text-slate-400">${p.branch}</td>
+                    <td class="py-3 px-3 text-xs font-bold text-emerald-400">${formatUZS(p.costPrice)}</td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="openSellModal('${p.id}')" class="px-3 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-slate-950 text-xs font-bold border border-sky-500/30 transition cursor-pointer">Sotish</button>
+                    </td>
+                </tr>
+            `).join('') : `<tr><td colspan="6" class="py-6 text-center text-xs text-slate-500">Omborda mos telefon topilmadi</td></tr>`;
+
+            // Sales & Debts Table
+            const searchedSales = filteredSales.filter(s => !search || s.model.toLowerCase().includes(search) || s.imei.includes(search) || (s.customerName && s.customerName.toLowerCase().includes(search)));
+            document.getElementById('owner-sales-tbody').innerHTML = searchedSales.length ? searchedSales.map(s => {
+                const profit = Number(s.salePrice) - Number(s.costPrice);
+                const hasDebt = Number(s.debtAmount) > 0;
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-3">
+                            <div class="font-semibold text-white text-xs">${s.model}</div>
+                            <div class="font-mono text-[11px] text-slate-400">${s.imei}</div>
+                        </td>
+                        <td class="py-3 px-3 text-xs">
+                            <div class="text-slate-300">${s.branch}</div>
+                            <div class="text-slate-500">${s.sellerName} • ${s.soldAt}</div>
+                        </td>
+                        <td class="py-3 px-3 text-xs">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${hasDebt ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/15 text-emerald-400'}">${s.paymentType}</span>
+                            ${s.customerName ? `<div class="text-slate-300 mt-1">${s.customerName} <span class="text-slate-500">${s.customerPhone || ''}</span></div>` : ''}
+                        </td>
+                        <td class="py-3 px-3 text-xs font-bold text-white">${formatUZS(s.salePrice)}</td>
+                        <td class="py-3 px-3 text-xs font-bold text-emerald-400">+${formatUZS(profit)}</td>
+                        <td class="py-3 px-3 text-xs font-bold ${hasDebt ? 'text-amber-400' : 'text-slate-500'}">
+                            ${hasDebt ? formatUZS(s.debtAmount) : 'To‘langan'}
+                        </td>
+                        <td class="py-3 px-3 text-right">
+                            ${hasDebt ? `<button onclick="payOffDebt('${s.id}')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 text-[11px] font-bold border border-amber-500/30 transition cursor-pointer">Qarzni yopish</button>` : '<span class="text-xs text-slate-600">—</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('') : `<tr><td colspan="7" class="py-6 text-center text-xs text-slate-500">Sotuvlar topilmadi</td></tr>`;
+        }
+
+        function setApprovalFilter(mode) {
+            ownerApprovalTab = mode;
+            const btnP = document.getElementById('appr-filter-pending');
+            const btnH = document.getElementById('appr-filter-history');
+            if (mode === 'pending') {
+                btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition cursor-pointer';
+                btnH.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer';
+            } else {
+                btnH.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-slate-950 transition cursor-pointer';
+                btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 transition cursor-pointer';
+            }
+            renderOwnerDashboard();
+        }
+
+        function renderOwnerApprovals(branchFilter) {
+            const allBranchReqs = db.pending_approvals.filter(r => branchFilter === 'all' || r.branch === branchFilter);
+            const pendingReqs = allBranchReqs.filter(r => r.status === 'pending');
+            const historyReqs = allBranchReqs.filter(r => r.status !== 'pending');
+
+            const badge = document.getElementById('owner-pending-badge');
+            const dot = document.getElementById('owner-pending-dot');
+            badge.textContent = `${pendingReqs.length} ta kutilmoqda`;
+            if (pendingReqs.length > 0) dot.classList.remove('hidden');
+            else dot.classList.add('hidden');
+
+            const listEl = document.getElementById('owner-approvals-list');
+            const targetList = ownerApprovalTab === 'pending' ? pendingReqs : historyReqs;
+
+            if (!targetList.length) {
+                listEl.innerHTML = `<div class="py-6 text-center text-xs text-slate-500 bg-slate-950/50 rounded-xl border border-slate-800/60">
+                    ${ownerApprovalTab === 'pending' ? 'Hozircha tasdiqlash kutilayotgan so‘rovlar yo‘q.' : 'Ko‘rib chiqilgan so‘rovlar tarixi bo‘sh.'}
+                </div>`;
+                return;
+            }
+
+            listEl.innerHTML = targetList.map(req => {
+                const p = req.payload;
+                let typeBadge = '';
+                let detailsHtml = '';
+
+                if (req.type === 'add_phone') {
+                    typeBadge = `<span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/25">Yangi Kirim</span>`;
+                    detailsHtml = `
+                        <div class="text-sm font-bold text-white">${p.model} <span class="text-xs font-normal text-slate-400">(${p.condition} • ${p.battery}%)</span></div>
+                        <div class="text-xs font-mono text-slate-400 mt-0.5">IMEI: <span class="text-slate-200">${p.imei}</span></div>
+                        <div class="text-xs text-emerald-400 font-semibold mt-1">Kirim (tan) narxi: ${formatUZS(p.costPrice)}</div>
+                    `;
+                } else if (req.type === 'sale') {
+                    const estProfit = Number(p.salePrice) - Number(p.costPrice);
+                    typeBadge = `<span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Sotuv (${p.paymentType})</span>`;
+                    detailsHtml = `
+                        <div class="text-sm font-bold text-white">${p.model}</div>
+                        <div class="text-xs font-mono text-slate-400 mt-0.5">IMEI: <span class="text-slate-200">${p.imei}</span></div>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-1.5">
+                            <span class="text-white font-semibold">Sotuv: ${formatUZS(p.salePrice)}</span>
+                            <span class="text-emerald-400 font-bold">Kutilayotgan sof foyda: +${formatUZS(estProfit)}</span>
+                            ${p.debtAmount > 0 ? `<span class="text-amber-400 font-semibold">Nasiya qarz: ${formatUZS(p.debtAmount)} (${p.customerName})</span>` : ''}
+                        </div>
+                    `;
+                } else if (req.type === 'debt_payment') {
+                    typeBadge = `<span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25">Qarz To‘lovi</span>`;
+                    detailsHtml = `
+                        <div class="text-sm font-bold text-white">Mijoz: ${p.customerName} <span class="text-xs font-normal text-slate-400">(${p.customerPhone || 'raqam yo‘q'})</span></div>
+                        <div class="text-xs text-slate-400 mt-0.5">${p.model} • IMEI: ${p.imei}</div>
+                        <div class="text-xs text-amber-400 font-bold mt-1">Yopilayotgan qarz summasi: ${formatUZS(p.paidDebtAmount)}</div>
+                    `;
+                }
+
+                const statusControls = req.status === 'pending' ? `
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="approveRequest('${req.id}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition cursor-pointer">
+                            <i class="fa-solid fa-check mr-1"></i>Tasdiqlash
+                        </button>
+                        <button onclick="rejectRequest('${req.id}')" class="px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-xs font-bold transition cursor-pointer">
+                            <i class="fa-solid fa-xmark mr-1"></i>Rad etish
+                        </button>
+                    </div>
+                ` : `
+                    <span class="px-3 py-1 rounded-full text-xs font-bold ${req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-rose-500/15 text-rose-400 border border-rose-500/25'}">
+                        ${req.status === 'approved' ? 'Tasdiqlangan' : 'Rad etilgan'}
+                    </span>
+                `;
+
+                return `
+                    <div class="p-4 rounded-xl bg-slate-950/90 border ${req.status === 'pending' ? 'border-amber-500/30' : 'border-slate-800'} flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                ${typeBadge}
+                                <span class="text-xs font-bold text-sky-400">${req.staffName}</span>
+                                <span class="text-[11px] text-slate-500">• ${req.branch} • ${req.createdAt}</span>
+                            </div>
+                            ${detailsHtml}
+                        </div>
+                        ${statusControls}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function approveRequest(reqId) {
+            const req = db.pending_approvals.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+            const p = req.payload;
+
+            if (req.type === 'add_phone') {
+                if (db.phones.some(ph => ph.imei === p.imei)) {
+                    showToast("Bu IMEI allaqachon omborda mavjud!", "error");
+                    return;
+                }
+                db.phones.unshift({
+                    id: 'p-' + Date.now(),
+                    model: p.model,
+                    imei: p.imei,
+                    condition: p.condition,
+                    battery: p.battery,
+                    branch: req.branch,
+                    costPrice: p.costPrice,
+                    status: 'in_stock'
+                });
+            } else if (req.type === 'sale') {
+                const phone = db.phones.find(ph => ph.id === p.phoneId);
+                if (!phone || phone.status !== 'in_stock') {
+                    showToast("Bu telefon allaqachon sotilgan yoki omborda yo‘q!", "error");
+                    req.status = 'rejected';
+                    saveDB(db);
+                    renderOwnerDashboard();
+                    return;
+                }
+                phone.status = 'sold';
+                db.sales.unshift({
+                    id: 's-' + Date.now(),
+                    phoneId: phone.id,
+                    model: phone.model,
+                    imei: phone.imei,
+                    branch: req.branch,
+                    sellerId: req.staffId,
+                    sellerName: req.staffName,
+                    costPrice: phone.costPrice,
+                    salePrice: p.salePrice,
+                    paymentType: p.paymentType,
+                    customerName: p.customerName,
+                    customerPhone: p.customerPhone,
+                    paidAmount: p.paidAmount,
+                    debtAmount: p.debtAmount,
+                    dueDate: p.dueDate,
+                    soldAt: req.createdAt
+                });
+            } else if (req.type === 'debt_payment') {
+                const sale = db.sales.find(s => s.id === p.saleId);
+                if (sale) {
+                    sale.paidAmount = sale.salePrice;
+                    sale.debtAmount = 0;
+                    sale.paymentType = 'Naqd (Qarz yopilgan)';
+                }
+            }
+
+            req.status = 'approved';
+            saveDB(db);
+            renderOwnerDashboard();
+            showToast(`So‘rov tasdiqlandi va bazaga yozildi!`);
+        }
+
+        function rejectRequest(reqId) {
+            const req = db.pending_approvals.find(r => r.id === reqId);
+            if (!req || req.status !== 'pending') return;
+            req.status = 'rejected';
+            saveDB(db);
+            renderOwnerDashboard();
+            showToast("So‘rov rad etildi.", "error");
+        }
+
+        // =====================================================================
+        // STAFF DASHBOARD RENDERING (STRICTLY SCOPED & NO COST/PROFIT LEAK)
+        // =====================================================================
+        function renderStaffDashboard() {
+            const myBranch = currentUser.branch;
+            const search = document.getElementById('staff-pos-search').value.trim().toLowerCase();
+
+            // Pending locks so staff cannot submit duplicate requests for the same phone/debt
+            const pendingSalePhoneIds = new Set(
+                db.pending_approvals.filter(r => r.status === 'pending' && r.type === 'sale').map(r => r.payload.phoneId)
+            );
+            const pendingDebtSaleIds = new Set(
+                db.pending_approvals.filter(r => r.status === 'pending' && r.type === 'debt_payment').map(r => r.payload.saleId)
+            );
+
+            // Only phones in this staff member's branch
+            const branchStock = db.phones.filter(p => p.status === 'in_stock' && p.branch === myBranch);
+            const mySales = db.sales.filter(s => s.sellerId === currentUser.id);
+            const branchDebts = db.sales.filter(s => s.branch === myBranch && Number(s.debtAmount) > 0);
+            const myRequests = db.pending_approvals.filter(r => r.staffId === currentUser.id);
+
+            const myRevenue = mySales.reduce((sum, s) => sum + Number(s.salePrice), 0);
+            const branchDebtSum = branchDebts.reduce((sum, s) => sum + Number(s.debtAmount), 0);
+            const myPendingCount = myRequests.filter(r => r.status === 'pending').length;
+
+            document.getElementById('staff-kpi-stock').textContent = `${branchStock.length} dona`;
+            document.getElementById('staff-kpi-mysales').textContent = formatUZS(myRevenue);
+            document.getElementById('staff-kpi-mycount').textContent = `${mySales.length} ta tasdiqlangan sotuv`;
+            document.getElementById('staff-kpi-debt').textContent = formatUZS(branchDebtSum);
+            document.getElementById('staff-kpi-debtcount').textContent = `${branchDebts.length} ta faol nasiya`;
+            document.getElementById('staff-pending-count-badge').textContent = `${myPendingCount} kutilmoqda`;
+
+            // POS Stock Cards (NO costPrice displayed!)
+            const filteredPOS = branchStock.filter(p => !search || p.model.toLowerCase().includes(search) || p.imei.includes(search));
+            const posGrid = document.getElementById('staff-stock-grid');
+            posGrid.innerHTML = filteredPOS.length ? filteredPOS.map(p => {
+                const isLocked = pendingSalePhoneIds.has(p.id);
+                return `
+                    <div class="rounded-xl bg-slate-950/85 border ${isLocked ? 'border-amber-500/40' : 'border-slate-800 hover:border-sky-500/40'} p-4 flex flex-col justify-between gap-3 transition">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="font-bold text-sm text-white">${p.model}</h4>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${p.condition === 'Yangi' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-sky-500/15 text-sky-400'}">${p.condition} • ${p.battery}%</span>
+                            </div>
+                            <div class="mt-2 font-mono text-xs text-slate-400 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                                IMEI: <span class="text-slate-200">${p.imei}</span>
+                            </div>
+                        </div>
+                        ${isLocked ? `
+                            <button disabled class="w-full py-2.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold cursor-not-allowed">
+                                <i class="fa-solid fa-hourglass-half mr-1.5"></i>Admin tasdiqlashida...
+                            </button>
+                        ` : `
+                            <button onclick="openSellModal('${p.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition cursor-pointer">
+                                <i class="fa-solid fa-cart-shopping mr-1.5"></i>Sotish (So‘rov yuborish)
+                            </button>
+                        `}
+                    </div>
+                `;
+            }).join('') : `<div class="col-span-full py-8 text-center text-xs text-slate-500">Filial omborida mos telefon topilmadi.</div>`;
+
+            // Staff Submitted Requests List (NO costPrice or profit shown!)
+            const reqListEl = document.getElementById('staff-requests-list');
+            reqListEl.innerHTML = myRequests.length ? myRequests.map(r => {
+                const p = r.payload;
+                const typeLabel = r.type === 'add_phone' ? 'Omborga kirim' : (r.type === 'sale' ? `Sotuv (${p.paymentType})` : 'Qarz to‘lovi');
+                const statusBadge = r.status === 'pending'
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">Kutilmoqda</span>`
+                    : (r.status === 'approved'
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Tasdiqlangan</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">Rad etilgan</span>`);
+
+                const amountInfo = r.type === 'sale' ? formatUZS(p.salePrice) : (r.type === 'debt_payment' ? formatUZS(p.paidDebtAmount) : p.imei);
+
+                return `
+                    <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold text-sky-400">${typeLabel}</span>
+                                <span class="text-[10px] text-slate-500">${r.createdAt}</span>
+                            </div>
+                            <div class="font-semibold text-xs text-white mt-0.5">${p.model || p.customerName}</div>
+                            <div class="font-mono text-[11px] text-slate-400">${amountInfo}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+            }).join('') : `<p class="text-xs text-slate-500 text-center py-6">Hali adminga so‘rov yuborilmagan.</p>`;
+
+            // Branch Debts Collection
+            const debtsEl = document.getElementById('staff-debts-list');
+            debtsEl.innerHTML = branchDebts.length ? branchDebts.map(d => {
+                const isDebtPending = pendingDebtSaleIds.has(d.id);
+                return `
+                    <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between gap-3">
+                        <div>
+                            <div class="font-bold text-xs text-white">${d.customerName} <span class="text-slate-400 font-normal">(${d.customerPhone || 'raqam yo‘q'})</span></div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">${d.model} • Muddat: ${d.dueDate || 'Belgilanmagan'}</div>
+                            <div class="text-xs font-bold text-amber-400 mt-1">Qoldiq qarz: ${formatUZS(d.debtAmount)}</div>
+                        </div>
+                        ${isDebtPending ? `
+                            <span class="px-3 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold shrink-0">Tasdiqlashda...</span>
+                        ` : `
+                            <button onclick="payOffDebt('${d.id}')" class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shrink-0 transition cursor-pointer">
+                                To‘lov qabul qilish
+                            </button>
+                        `}
+                    </div>
+                `;
+            }).join('') : `<p class="text-xs text-slate-500 text-center py-6">Filialda faol nasiya qarzlari yo‘q.</p>`;
+
+            // My Approved Sales History (NO profit displayed!)
+            const mySalesEl = document.getElementById('staff-mysales-list');
+            mySalesEl.innerHTML = mySales.length ? mySales.map(s => `
+                <div class="p-3 rounded-xl bg-slate-950/75 border border-slate-800 flex items-center justify-between gap-2">
+                    <div>
+                        <div class="font-semibold text-xs text-white">${s.model}</div>
+                        <div class="font-mono text-[11px] text-slate-400">${s.imei} • ${s.soldAt}</div>
+                        ${s.customerName ? `<div class="text-[11px] text-slate-400 mt-0.5">Mijoz: ${s.customerName}</div>` : ''}
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-xs text-sky-400">${formatUZS(s.salePrice)}</div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">${s.paymentType}</span>
+                    </div>
+                </div>
+            `).join('') : `<p class="col-span-full text-xs text-slate-500 text-center py-6">Sizda hali tasdiqlangan sotuvlar yo‘q.</p>`;
+        }
+
+        // =====================================================================
+        // MODALS & ACTIONS (OWNER = DIRECT, STAFF = APPROVAL REQUEST)
+        // =====================================================================
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        }
+
+        function openAddPhoneModal(roleContext) {
+            const branchWrapper = document.getElementById('add-phone-branch-wrapper');
+            const branchSelect = document.getElementById('add-phone-branch');
+            if (roleContext === 'staff') {
+                branchSelect.value = currentUser.branch;
+                branchWrapper.classList.add('hidden');
+            } else {
+                branchWrapper.classList.remove('hidden');
+            }
+            const modal = document.getElementById('modal-add-phone');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function fillRandomIMEI() {
+            let imei = '35';
+            for (let i = 0; i < 13; i++) imei += Math.floor(Math.random() * 10);
+            document.getElementById('add-phone-imei').value = imei;
+        }
+
+        function toggleBatteryInput() {
+            const cond = document.getElementById('add-phone-condition').value;
+            if (cond === 'Yangi') document.getElementById('add-phone-battery').value = 100;
+        }
+
+        function getFormattedNow() {
+            const now = new Date();
+            return `Bugun, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function handleAddPhoneSubmit(e) {
+            e.preventDefault();
+            const branch = currentUser.role === 'staff' ? currentUser.branch : document.getElementById('add-phone-branch').value;
+            const model = document.getElementById('add-phone-model').value.trim();
+            const imei = document.getElementById('add-phone-imei').value.trim();
+            const condition = document.getElementById('add-phone-condition').value;
+            const battery = Number(document.getElementById('add-phone-battery').value);
+            const costPrice = Number(document.getElementById('add-phone-cost').value);
+
+            if (imei.length !== 15) {
+                showToast("IMEI aniq 15 ta raqamdan iborat bo‘lishi kerak!", "error");
+                return;
+            }
+            const existsInStock = db.phones.some(p => p.imei === imei);
+            const existsInPending = db.pending_approvals.some(r => r.status === 'pending' && r.type === 'add_phone' && r.payload.imei === imei);
+            if (existsInStock || existsInPending) {
+                showToast("Bu IMEI raqami bazada yoki tasdiqlash ro‘yxatida mavjud!", "error");
+                return;
+            }
+
+            if (currentUser.role === 'staff') {
+                db.pending_approvals.unshift({
+                    id: 'req-' + Date.now(),
+                    type: 'add_phone',
+                    status: 'pending',
+                    staffId: currentUser.id,
+                    staffName: currentUser.fullName,
+                    branch: currentUser.branch,
+                    createdAt: getFormattedNow(),
+                    payload: { model, imei, condition, battery, costPrice }
+                });
+                saveDB(db);
+                closeModal('modal-add-phone');
+                e.target.reset();
+                routeByRole();
+                showToast("Amaliyot adminga tasdiqlash uchun yuborildi!");
+                return;
+            }
+
+            // Owner adds directly
+            db.phones.unshift({
+                id: 'p-' + Date.now(),
+                model,
+                imei,
+                condition,
+                battery,
+                branch,
+                costPrice,
+                status: 'in_stock'
+            });
+            saveDB(db);
+            closeModal('modal-add-phone');
+            e.target.reset();
+            routeByRole();
+            showToast(`${model} (${branch}) omborga qo‘shildi!`);
+        }
+
+        function openSellModal(phoneId) {
+            const phone = db.phones.find(p => p.id === phoneId);
+            if (!phone) return;
+
+            document.getElementById('sell-phone-id').value = phone.id;
+            document.getElementById('sell-phone-title').textContent = `${phone.model} (${phone.condition} • ${phone.battery}%)`;
+            document.getElementById('sell-phone-meta').textContent = `IMEI: ${phone.imei} • Filial: ${phone.branch}`;
+            document.getElementById('sell-price').value = '';
+            document.getElementById('sell-payment-type').value = 'Naqd';
+            toggleInstallmentFields();
+
+            const modal = document.getElementById('modal-sell-phone');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function toggleInstallmentFields() {
+            const type = document.getElementById('sell-payment-type').value;
+            const instBox = document.getElementById('installment-fields-box');
+            const regBox = document.getElementById('regular-customer-box');
+            if (type === 'Nasiya') {
+                instBox.classList.remove('hidden');
+                regBox.classList.add('hidden');
+                recalcInstallmentDebt();
+            } else {
+                instBox.classList.add('hidden');
+                regBox.classList.remove('hidden');
+            }
+        }
+
+        function recalcInstallmentDebt() {
+            const price = Number(document.getElementById('sell-price').value || 0);
+            const paid = Number(document.getElementById('inst-paid-amount').value || 0);
+            const rem = Math.max(0, price - paid);
+            document.getElementById('inst-remaining-debt').textContent = formatUZS(rem);
+        }
+
+        function handleSellPhoneSubmit(e) {
+            e.preventDefault();
+            const phoneId = document.getElementById('sell-phone-id').value;
+            const phone = db.phones.find(p => p.id === phoneId);
+            if (!phone) return;
+
+            const salePrice = Number(document.getElementById('sell-price').value);
+            const paymentType = document.getElementById('sell-payment-type').value;
+
+            let customerName = '';
+            let customerPhone = '';
+            let paidAmount = salePrice;
+            let debtAmount = 0;
+            let dueDate = '';
+
+            if (paymentType === 'Nasiya') {
+                customerName = document.getElementById('inst-customer-name').value.trim();
+                customerPhone = document.getElementById('inst-customer-phone').value.trim();
+                paidAmount = Number(document.getElementById('inst-paid-amount').value || 0);
+                dueDate = document.getElementById('inst-due-date').value;
+                if (!customerName || !customerPhone) {
+                    showToast("Nasiya uchun mijoz ismi va raqamini kiriting!", "error");
+                    return;
+                }
+                debtAmount = Math.max(0, salePrice - paidAmount);
+            } else {
+                customerName = document.getElementById('sell-regular-customer').value.trim();
+            }
+
+            const timeStr = getFormattedNow();
+
+            if (currentUser.role === 'staff') {
+                db.pending_approvals.unshift({
+                    id: 'req-' + Date.now(),
+                    type: 'sale',
+                    status: 'pending',
+                    staffId: currentUser.id,
+                    staffName: currentUser.fullName,
+                    branch: currentUser.branch,
+                    createdAt: timeStr,
+                    payload: {
+                        phoneId: phone.id,
+                        model: phone.model,
+                        imei: phone.imei,
+                        costPrice: phone.costPrice,
+                        salePrice,
+                        paymentType,
+                        customerName,
+                        customerPhone,
+                        paidAmount,
+                        debtAmount,
+                        dueDate
+                    }
+                });
+                saveDB(db);
+                closeModal('modal-sell-phone');
+                routeByRole();
+                showToast("Amaliyot adminga tasdiqlash uchun yuborildi!");
+                return;
+            }
+
+            // Owner sells directly
+            phone.status = 'sold';
+            db.sales.unshift({
+                id: 's-' + Date.now(),
+                phoneId: phone.id,
+                model: phone.model,
+                imei: phone.imei,
+                branch: phone.branch,
+                sellerId: currentUser.id,
+                sellerName: currentUser.fullName,
+                costPrice: phone.costPrice,
+                salePrice,
+                paymentType,
+                customerName,
+                customerPhone,
+                paidAmount,
+                debtAmount,
+                dueDate,
+                soldAt: timeStr
+            });
+
+            saveDB(db);
+            closeModal('modal-sell-phone');
+            routeByRole();
+            showToast(`Sotuv muvaffaqiyatli yakunlandi!`);
+        }
+
+        function payOffDebt(saleId) {
+            const sale = db.sales.find(s => s.id === saleId);
+            if (!sale) return;
+
+            if (currentUser.role === 'staff') {
+                db.pending_approvals.unshift({
+                    id: 'req-' + Date.now(),
+                    type: 'debt_payment',
+                    status: 'pending',
+                    staffId: currentUser.id,
+                    staffName: currentUser.fullName,
+                    branch: currentUser.branch,
+                    createdAt: getFormattedNow(),
+                    payload: {
+                        saleId: sale.id,
+                        model: sale.model,
+                        imei: sale.imei,
+                        customerName: sale.customerName,
+                        customerPhone: sale.customerPhone,
+                        paidDebtAmount: sale.debtAmount
+                    }
+                });
+                saveDB(db);
+                routeByRole();
+                showToast("Amaliyot adminga tasdiqlash uchun yuborildi!");
+                return;
+            }
+
+            // Owner closes debt directly
+            sale.paidAmount = sale.salePrice;
+            sale.debtAmount = 0;
+            sale.paymentType = 'Naqd (Qarz yopilgan)';
+            saveDB(db);
+            routeByRole();
+            showToast(`${sale.customerName} qarzi to‘liq yopildi!`);
+        }
+
+        function openAddStaffModal() {
+            const modal = document.getElementById('modal-add-staff');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function handleAddStaffSubmit(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('new-staff-name').value.trim();
+            const branch = document.getElementById('new-staff-branch').value;
+            const username = document.getElementById('new-staff-username').value.trim().toLowerCase();
+            const password = document.getElementById('new-staff-password').value.trim();
+
+            if (db.users.some(u => u.username.toLowerCase() === username)) {
+                showToast("Bu login band! Boshqa login tanlang.", "error");
+                return;
+            }
+
+            db.users.push({
+                id: 'u-' + Date.now(),
+                username,
+                password,
+                fullName,
+                role: 'staff',
+                branch
+            });
+            saveDB(db);
+            closeModal('modal-add-staff');
+            e.target.reset();
+            renderOwnerDashboard();
+            showToast(`Yangi sotuvchi (${fullName}) qo‘shildi!`);
+        }
+
+        function resetAllDemoData() {
+            db = JSON.parse(JSON.stringify(DEFAULT_DB));
+            saveDB(db);
+            routeByRole();
+            showToast("Barcha demo ma'lumotlar yangilandi.");
+        }
+
+        // Boot App
+        window.addEventListener('DOMContentLoaded', routeByRole);
+    </script>
+</body>
+</html>
